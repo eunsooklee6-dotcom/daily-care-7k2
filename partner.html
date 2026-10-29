@@ -1,0 +1,887 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="robots" content="noindex,nofollow">
+<title>데일리 케어 CRM · 파트너용</title>
+<script src="https://cdn.tailwindcss.com"></script>
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+<style>
+  body{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,"Malgun Gothic",sans-serif;background:#f8fafc}
+  .status-badge{font-size:.75rem;padding:2px 8px;border-radius:9999px;font-weight:600}
+  .lineclamp{display:-webkit-box;-webkit-line-clamp:3;-webkit-box-orient:vertical;overflow:hidden}
+  .cat-타라인{background:#fef3c7;color:#92400e;border-color:#fcd34d}
+  .cat-사업{background:#e0e7ff;color:#3730a3;border-color:#c7d2fe}
+  .cat-핵심{background:#fee2e2;color:#991b1b;border-color:#fecaca}
+  .cat-잠재{background:#dbeafe;color:#1e40af;border-color:#bfdbfe}
+  .cat-소비{background:#dcfce7;color:#166534;border-color:#bbf7d0}
+  .cat-우측{background:#f3e8ff;color:#6b21a8;border-color:#e9d5ff}
+  .cat-가족{background:#fce7f3;color:#9d174d;border-color:#fbcfe8}
+  .cat-일반{background:#f1f5f9;color:#475569;border-color:#e2e8f0}
+  .tabbtn{px:0}
+  .duechip{background:#fff;color:#475569;border-color:#e2e8f0}
+  .duechip.on{background:#4338ca;color:#fff;border-color:#4338ca}
+  .gr{font-size:10px;font-weight:800;border-radius:4px;padding:1px 5px;letter-spacing:.02em}
+  .gr-A{background:#0E2A47;color:#F3D28A}
+  .gr-B{background:#e2e8f0;color:#334155}
+  .gr-C{background:#eef1f4;color:#94a3b8}
+</style>
+</head>
+<body class="text-slate-800 pb-24">
+
+<header class="bg-indigo-700 text-white shadow-lg sticky top-0 z-30">
+  <div class="max-w-5xl mx-auto px-4 py-3 flex items-center justify-between">
+    <div class="flex items-center space-x-2">
+      <i class="fa-solid fa-wand-magic-sparkles text-yellow-300 text-2xl"></i>
+      <div>
+        <h1 class="text-lg font-bold leading-tight">데일리 케어 CRM</h1>
+        <p class="text-xs text-indigo-200" id="currentDateDisplay">오늘 집중 3명</p>
+      </div>
+    </div>
+    <div class="flex items-center space-x-2">
+      <input type="file" id="importFile" accept=".csv,text/csv" class="hidden" style="display:none" onchange="importCSV(event)">
+      <button onclick="document.getElementById('importFile').click()" class="text-xs bg-indigo-600 hover:bg-indigo-500 border border-indigo-400 px-3 py-1.5 rounded-lg flex items-center gap-1 transition">
+        <i class="fa-solid fa-file-import"></i> <span>가져오기</span>
+      </button>
+      <button onclick="exportCSV()" class="text-xs bg-indigo-600 hover:bg-indigo-500 border border-indigo-400 px-3 py-1.5 rounded-lg flex items-center gap-1 transition">
+        <i class="fa-solid fa-file-excel"></i> <span>백업</span>
+      </button>
+      <button onclick="openSettings()" class="text-xs bg-indigo-600 hover:bg-indigo-500 border border-indigo-400 px-2.5 py-1.5 rounded-lg flex items-center gap-1 transition" title="내 설정">
+        <i class="fa-solid fa-gear"></i>
+      </button>
+      <button onclick="openHelp()" class="text-xs bg-indigo-600 hover:bg-indigo-500 border border-indigo-400 px-2.5 py-1.5 rounded-lg flex items-center gap-1 transition" title="사용법">
+        <i class="fa-solid fa-circle-question"></i>
+      </button>
+      <button onclick="openKw()" class="text-xs bg-indigo-600 hover:bg-indigo-500 border border-indigo-400 px-2.5 py-1.5 rounded-lg flex items-center gap-1 transition" title="메모 키워드 안내">
+        <i class="fa-solid fa-key"></i>
+      </button>
+      <button onclick="openModal()" class="text-xs bg-yellow-400 hover:bg-yellow-300 text-slate-900 font-bold px-3 py-1.5 rounded-lg flex items-center gap-1 transition shadow">
+        <i class="fa-solid fa-user-plus"></i> <span>신규</span>
+      </button>
+    </div>
+  </div>
+</header>
+
+<main class="max-w-5xl mx-auto px-4 mt-5">
+
+  <div class="grid grid-cols-2 sm:grid-cols-4 gap-3 mb-5">
+    <div class="bg-white p-3.5 rounded-xl border border-slate-200 shadow-sm flex items-center justify-between">
+      <div><p class="text-xs text-slate-500 font-medium">관리 고객</p><p class="text-xl font-bold text-slate-800" id="statTotal">-</p></div>
+      <div class="w-10 h-10 rounded-full bg-slate-100 flex items-center justify-center text-slate-600"><i class="fa-solid fa-users"></i></div>
+    </div>
+    <div class="bg-gradient-to-br from-indigo-50 to-indigo-100 p-3.5 rounded-xl border border-indigo-200 shadow-sm flex items-center justify-between">
+      <div><p class="text-xs text-indigo-600 font-semibold">오늘의 몫 (<span class="quotaLbl">A2+B1</span>)</p><p class="text-xl font-bold text-indigo-800" id="statTodayPending">- / 3</p></div>
+      <div class="w-10 h-10 rounded-full bg-indigo-600 text-white flex items-center justify-center shadow"><i class="fa-solid fa-bullseye"></i></div>
+    </div>
+    <div class="bg-white p-3.5 rounded-xl border border-slate-200 shadow-sm flex items-center justify-between">
+      <button onclick="setDue('due')" class="text-left"><p class="text-xs text-amber-600 font-medium">주기 도래/초과 <i class="fa-solid fa-arrow-right text-[9px]"></i></p><p class="text-xl font-bold text-amber-600" id="statOverdue">-</p></button>
+      <div class="w-10 h-10 rounded-full bg-amber-50 flex items-center justify-center text-amber-600"><i class="fa-solid fa-clock-rotate-left"></i></div>
+    </div>
+    <div class="bg-white p-3.5 rounded-xl border border-slate-200 shadow-sm flex items-center justify-between">
+      <div><p class="text-xs text-emerald-600 font-medium">오늘 터치 완료</p><p class="text-xl font-bold text-emerald-600" id="statCompletedToday">-</p></div>
+      <div class="w-10 h-10 rounded-full bg-emerald-50 flex items-center justify-center text-emerald-600"><i class="fa-solid fa-circle-check"></i></div>
+    </div>
+  </div>
+
+
+  <div class="flex border-b border-slate-200 mb-4 bg-white rounded-t-xl px-2 pt-2 shadow-sm overflow-x-auto">
+    <button id="tabTodayBtn" onclick="switchView('today')" class="px-4 py-2.5 text-sm font-bold border-b-2 border-indigo-600 text-indigo-600 flex items-center gap-2 whitespace-nowrap">
+      <i class="fa-solid fa-star text-amber-400"></i> 오늘 <span class="quotaLbl">A2+B1</span>
+      <span id="badgeTodayCount" class="bg-indigo-100 text-indigo-700 text-xs px-2 py-0.5 rounded-full">3</span>
+    </button>
+    <button id="tabAllBtn" onclick="switchView('all')" class="px-4 py-2.5 text-sm font-medium text-slate-500 hover:text-slate-800 border-b-2 border-transparent flex items-center gap-2 whitespace-nowrap">
+      <i class="fa-solid fa-address-book"></i> 전체 명단 <span id="badgeAllCount">-</span>
+    </button>
+    <button id="tabLogBtn" onclick="switchView('log')" class="px-4 py-2.5 text-sm font-medium text-slate-500 hover:text-slate-800 border-b-2 border-transparent flex items-center gap-2 whitespace-nowrap">
+      <i class="fa-solid fa-clock-rotate-left"></i> 기록
+    </button>
+  </div>
+
+  <p id="apoolLine" class="text-[11px] text-slate-500 mb-3 -mt-1 flex flex-wrap items-center gap-x-2 gap-y-0.5"></p>
+
+  <div id="filterSection" class="hidden mb-4 bg-white p-3 rounded-xl border border-slate-200 shadow-sm space-y-3">
+    <div class="flex gap-2">
+      <div class="relative flex-1">
+        <i class="fa-solid fa-magnifying-glass absolute left-3 top-3 text-slate-400 text-sm"></i>
+        <input type="text" id="searchInput" oninput="renderApp()" placeholder="이름, 제품, 전화번호, 직업 검색..." class="w-full pl-9 pr-3 py-2 text-sm border border-slate-200 rounded-lg focus:outline-none focus:border-indigo-500">
+      </div>
+      <select id="categoryFilter" onchange="renderApp()" class="text-sm border border-slate-200 rounded-lg px-2.5 py-2 bg-slate-50 focus:outline-none focus:border-indigo-500">
+        <option value="ALL">전체 그룹</option>
+        <option value="사업">사업 파트너</option>
+        <option value="핵심">핵심 VIP</option>
+        <option value="잠재">잠재 고객</option>
+        <option value="소비">충성 소비자</option>
+        <option value="우측">우측 라인</option>
+        <option value="가족">가족</option>
+        <option value="일반">일반/시장</option>
+        <option value="타라인">타라인 (건드리지 않음)</option>
+      </select>
+      <select id="gradeFilter" onchange="renderApp()" class="text-sm border border-slate-200 rounded-lg px-2.5 py-2 bg-slate-50 focus:outline-none focus:border-indigo-500">
+        <option value="ALL">등급 전체</option>
+        <option value="A">A등급</option>
+        <option value="B">B등급</option>
+        <option value="C">C등급</option>
+      </select>
+    </div>
+    <div class="flex flex-wrap gap-1.5">
+      <button onclick="setDue('all')"   id="due-all"   class="duechip px-3 py-1.5 rounded-full text-[11.5px] font-bold border">전체</button>
+      <button onclick="setDue('due')"   id="due-due"   class="duechip px-3 py-1.5 rounded-full text-[11.5px] font-bold border">주기 지난 사람 <span id="dueCnt">0</span></button>
+      <button onclick="setDue('soon')"  id="due-soon"  class="duechip px-3 py-1.5 rounded-full text-[11.5px] font-bold border">7일 내 도래</button>
+      <button onclick="setDue('never')" id="due-never" class="duechip px-3 py-1.5 rounded-full text-[11.5px] font-bold border">연락 기록 없음</button>
+    </div>
+    <p class="text-[11px] text-slate-400"><i class="fa-solid fa-triangle-exclamation text-amber-500"></i> 타라인은 안내 문구만 보냅니다 — 사업 제안·재구매 유도 금지</p>
+  </div>
+
+  <div id="logSection" class="hidden mb-4"></div>
+  <div id="customerListContainer" class="space-y-3"></div>
+</main>
+
+<div id="customerModal" class="fixed inset-0 bg-black/50 z-50 hidden items-center justify-center p-4">
+  <div class="bg-white rounded-2xl max-w-lg w-full max-h-[90vh] overflow-y-auto p-5 shadow-2xl">
+    <div class="flex justify-between items-center pb-3 border-b border-slate-200">
+      <h3 class="text-base font-bold text-slate-800" id="modalTitle">고객 정보 수정</h3>
+      <button onclick="closeModal()" class="text-slate-400 hover:text-slate-600"><i class="fa-solid fa-xmark text-lg"></i></button>
+    </div>
+    <form id="customerForm" onsubmit="saveCustomer(event)" class="mt-4 space-y-3 text-sm">
+      <input type="hidden" id="formId">
+      <div class="grid grid-cols-2 gap-3">
+        <div><label class="block text-xs font-semibold text-slate-600 mb-1">성명 / 호칭 *</label>
+          <input type="text" id="formName" required class="w-full px-3 py-2 border rounded-lg focus:outline-none focus:border-indigo-500"></div>
+        <div><label class="block text-xs font-semibold text-slate-600 mb-1">회원번호</label>
+          <input type="text" id="formMemberNo" class="w-full px-3 py-2 border rounded-lg focus:outline-none focus:border-indigo-500">
+          <p id="memberWarn" class="hidden text-[11px] text-red-600 mt-1 font-semibold"><i class="fa-solid fa-triangle-exclamation"></i> 다른 고객과 회원번호가 겹칩니다</p></div>
+      </div>
+      <div class="grid grid-cols-2 gap-3">
+        <div><label class="block text-xs font-semibold text-slate-600 mb-1">연락처 *</label>
+          <input type="text" id="formPhone" required class="w-full px-3 py-2 border rounded-lg focus:outline-none focus:border-indigo-500"></div>
+        <div><label class="block text-xs font-semibold text-slate-600 mb-1">관리 그룹</label>
+          <select id="formCategory" class="w-full px-3 py-2 border rounded-lg bg-white focus:outline-none focus:border-indigo-500">
+            <option value="사업">사업 파트너</option><option value="핵심">핵심 VIP</option>
+            <option value="잠재">잠재 고객</option><option value="소비">충성 소비자</option>
+            <option value="우측">우측 라인</option><option value="가족">가족</option>
+            <option value="일반">일반/시장</option><option value="타라인">타라인</option>
+          </select></div>
+      </div>
+      <div class="grid grid-cols-2 gap-3">
+        <div><label class="block text-xs font-semibold text-slate-600 mb-1">케어 주기 (일) *</label>
+          <input type="number" id="formCycle" required min="3" max="180" class="w-full px-3 py-2 border rounded-lg focus:outline-none focus:border-indigo-500"></div>
+        <div><label class="block text-xs font-semibold text-slate-600 mb-1">마지막 연락일</label>
+          <input type="date" id="formLastContact" class="w-full px-3 py-2 border rounded-lg focus:outline-none focus:border-indigo-500"></div>
+      </div>
+      <div>
+        <label class="block text-xs font-semibold text-slate-600 mb-1">등급 <span class="text-slate-400 font-normal">— A는 매일 2명, B는 매일 1명 순환에 오릅니다</span></label>
+        <select id="formGrade" class="w-full px-3 py-2 border rounded-lg bg-white focus:outline-none focus:border-indigo-500">
+          <option value="A">A · 매일 순환 (핵심)</option>
+          <option value="B">B · 주기 관리</option>
+          <option value="C">C · 저빈도</option>
+        </select>
+      </div>
+      <div><label class="block text-xs font-semibold text-slate-600 mb-1">직업 및 특징</label>
+        <input type="text" id="formFeature" class="w-full px-3 py-2 border rounded-lg focus:outline-none focus:border-indigo-500"></div>
+      <div><label class="block text-xs font-semibold text-slate-600 mb-1">구매/관심 제품</label>
+        <input type="text" id="formProduct" class="w-full px-3 py-2 border rounded-lg focus:outline-none focus:border-indigo-500"></div>
+      <div>
+        <div class="flex items-center justify-between mb-1">
+          <label class="block text-xs font-semibold text-indigo-700">내부 메모 (초안 재료)</label>
+          <span class="text-[11px] text-slate-400">손님에게 절대 전송되지 않습니다</span>
+        </div>
+        <textarea id="formMemo" rows="3" class="w-full px-3 py-2 border rounded-lg focus:outline-none focus:border-indigo-500 bg-indigo-50/20"></textarea>
+      </div>
+      <div class="flex justify-between gap-2 pt-3 border-t border-slate-200">
+        <button type="button" id="btnDelete" onclick="delCustomer()" class="px-3 py-2 text-red-600 text-xs font-semibold hidden">삭제</button>
+        <div class="flex gap-2 ml-auto">
+          <button type="button" onclick="closeModal()" class="px-4 py-2 border rounded-lg text-slate-600 hover:bg-slate-50">취소</button>
+          <button type="submit" class="px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white font-semibold rounded-lg shadow">저장</button>
+        </div>
+      </div>
+    </form>
+  </div>
+</div>
+
+<div id="messageModal" class="fixed inset-0 bg-black/50 z-50 hidden items-center justify-center p-4">
+  <div class="bg-white rounded-2xl max-w-md w-full p-5 shadow-2xl max-h-[90vh] overflow-y-auto">
+    <div class="flex justify-between items-center pb-3 border-b border-slate-200">
+      <h3 class="text-base font-bold text-slate-800 flex items-center gap-2">
+        <i class="fa-solid fa-wand-magic-sparkles text-indigo-600"></i> <span id="msgModalRecipient">맞춤 초안</span>
+      </h3>
+      <button onclick="closeMessageModal()" class="text-slate-400 hover:text-slate-600"><i class="fa-solid fa-xmark text-lg"></i></button>
+    </div>
+    <div class="mt-3 space-y-3">
+      <div class="flex items-center justify-between">
+        <span class="text-xs font-semibold text-amber-700 bg-amber-50 border border-amber-200 rounded px-2 py-0.5"><i class="fa-solid fa-pen-nib"></i> 초안 — 보내기 전 한 줄만 고치세요</span>
+        <button onclick="regenerateActiveMessage()" class="text-[11px] text-indigo-600 hover:text-indigo-800 font-bold flex items-center gap-1"><i class="fa-solid fa-arrows-rotate"></i> 다시</button>
+      </div>
+      <textarea id="msgModalContent" rows="8" oninput="updateSmsLink()" class="w-full p-3.5 text-xs leading-relaxed border rounded-xl bg-slate-50 focus:outline-none focus:border-indigo-500 text-slate-700"></textarea>
+      <p id="tarWarn" class="hidden text-[11px] text-amber-700 bg-amber-50 border border-amber-200 rounded-lg p-2 leading-relaxed"><i class="fa-solid fa-triangle-exclamation"></i> 타라인 고객입니다 — 안부만 보내고 제품·사업 이야기는 넣지 마세요.</p>
+      <div class="flex gap-2 pt-1">
+        <button onclick="copyMessageText()" class="flex-1 py-2.5 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-xl text-xs font-bold border border-slate-200 flex items-center justify-center gap-1.5">
+          <i class="fa-solid fa-copy"></i> 복사
+        </button>
+        <a id="msgModalSendLink" href="#" class="flex-1 py-2.5 bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl text-xs font-bold flex items-center justify-center gap-1.5 shadow">
+          <i class="fa-solid fa-paper-plane"></i> 문자 전송
+        </a>
+      </div>
+      <button onclick="markDoneFromModal()" class="w-full mt-1 py-2.5 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl text-xs font-bold shadow">
+        <i class="fa-solid fa-check"></i> 보냈습니다 · 연락 완료 처리
+      </button>
+      <p class="text-[10.5px] text-slate-400 leading-relaxed pt-1">건강기능식품 효능 표현은 심의 대상입니다. 초안을 그대로 복사하지 말고 표현을 한 번 확인한 뒤 발송하세요.</p>
+    </div>
+  </div>
+</div>
+
+
+<div id="kwModal" class="fixed inset-0 bg-black/50 z-50 hidden items-center justify-center p-4">
+  <div class="bg-white rounded-2xl max-w-md w-full p-5 shadow-2xl max-h-[88vh] overflow-y-auto">
+    <div class="flex justify-between items-center pb-3 border-b border-slate-200">
+      <h3 class="text-base font-bold text-slate-800 flex items-center gap-2"><i class="fa-solid fa-key text-indigo-600"></i> 내부메모 키워드</h3>
+      <button onclick="closeKw()" class="text-slate-400 hover:text-slate-600"><i class="fa-solid fa-xmark text-lg"></i></button>
+    </div>
+    <p class="text-[11.5px] text-slate-500 mt-3 leading-relaxed">메모·제품·특징 중 <b>아래 단어가 하나라도 있으면</b> 그 문장이 초안으로 나옵니다. 위에 있는 것이 먼저 적용됩니다.</p>
+    <div id="kwList" class="mt-3 space-y-1.5"></div>
+    <div class="mt-4 bg-amber-50 border border-amber-200 rounded-lg p-3 text-[11px] text-amber-900 leading-relaxed">
+      <b>없는 단어를 쓰면 기본 안부로 나옵니다.</b> 자주 쓰는 표현이 있는데 목록에 없으면 알려주세요 — 계속 늘려갑니다.
+    </div>
+    <button onclick="closeKw()" class="w-full mt-4 py-2.5 bg-slate-100 hover:bg-slate-200 rounded-xl text-xs font-bold border border-slate-200">닫기</button>
+  </div>
+</div>
+
+
+<div id="setModal" class="fixed inset-0 bg-black/50 z-50 hidden items-center justify-center p-4">
+  <div class="bg-white rounded-2xl max-w-md w-full p-5 shadow-2xl max-h-[88vh] overflow-y-auto text-sm">
+    <div class="flex justify-between items-center pb-3 border-b border-slate-200">
+      <h3 class="text-base font-bold text-slate-800 flex items-center gap-2"><i class="fa-solid fa-gear text-indigo-600"></i> 내 설정</h3>
+      <button onclick="closeSet()" class="text-slate-400 hover:text-slate-600"><i class="fa-solid fa-xmark text-lg"></i></button>
+    </div>
+    <p class="text-[11px] text-slate-500 mt-2">설정은 이 폰에만 저장됩니다.</p>
+    <div class="mt-3 space-y-3">
+      <div><label class="block text-xs font-semibold text-slate-600 mb-1">내 이름</label>
+        <input id="sName" class="w-full px-3 py-2 border rounded-lg" placeholder="예: 김OO">
+        <label class="mt-1.5 flex items-center gap-2 text-xs text-slate-600"><input type="checkbox" id="sSign"> 문자 끝에 "- 내 이름 드림" 붙이기 (가족 제외)</label></div>
+      <div class="grid grid-cols-2 gap-3">
+        <div><label class="block text-xs font-semibold text-slate-600 mb-1">하루 A등급 인원</label>
+          <select id="sQa" class="w-full px-3 py-2 border rounded-lg bg-white"><option>1</option><option>2</option><option>3</option><option>4</option><option>5</option></select></div>
+        <div><label class="block text-xs font-semibold text-slate-600 mb-1">하루 B등급 인원</label>
+          <select id="sQb" class="w-full px-3 py-2 border rounded-lg bg-white"><option>0</option><option>1</option><option>2</option><option>3</option></select></div>
+      </div>
+      <div><label class="block text-xs font-semibold text-slate-600 mb-1">특별 호칭 <span class="font-normal text-slate-400">— 한 줄에 하나, 이름=부를 말</span></label>
+        <textarea id="sHonors" rows="4" class="w-full px-3 py-2 border rounded-lg text-xs font-mono" placeholder="홍길순=언니&#10;김철수=철수야&#10;박영희 원장=원장님"></textarea>
+        <p class="text-[11px] text-slate-400 mt-1">적지 않으면 "OOO 님", 이름에 사장·원장·실장·목사가 있으면 자동으로 "사장님" 등으로 부릅니다.</p></div>
+      <div><label class="block text-xs font-semibold text-slate-600 mb-1">마무리 문장 (고객)</label>
+        <input id="sClose" class="w-full px-3 py-2 border rounded-lg text-xs"></div>
+      <div><label class="block text-xs font-semibold text-slate-600 mb-1">마무리 문장 (가족 그룹)</label>
+        <input id="sCloseFam" class="w-full px-3 py-2 border rounded-lg text-xs"></div>
+    </div>
+    <div class="flex gap-2 mt-4">
+      <button onclick="closeSet()" class="flex-1 py-2.5 bg-slate-100 rounded-xl text-xs font-bold border border-slate-200">취소</button>
+      <button onclick="saveSettings()" class="flex-1 py-2.5 bg-indigo-600 text-white rounded-xl text-xs font-bold shadow">저장</button>
+    </div>
+  </div>
+</div>
+
+<div id="helpModal" class="fixed inset-0 bg-black/50 z-50 hidden items-center justify-center p-4">
+  <div class="bg-white rounded-2xl max-w-md w-full p-5 shadow-2xl max-h-[88vh] overflow-y-auto text-[12.5px] leading-relaxed text-slate-700">
+    <div class="flex justify-between items-center pb-3 border-b border-slate-200">
+      <h3 class="text-base font-bold text-slate-800 flex items-center gap-2"><i class="fa-solid fa-circle-question text-indigo-600"></i> 처음 쓰시는 분께</h3>
+      <button onclick="closeHelp()" class="text-slate-400 hover:text-slate-600"><i class="fa-solid fa-xmark text-lg"></i></button>
+    </div>
+    <ol class="mt-3 space-y-2.5 list-decimal pl-4">
+      <li><b>홈 화면에 추가</b> — 아이폰: 사파리 공유 버튼 → "홈 화면에 추가". 갤럭시: 크롬 ⋮ → "홈 화면에 추가". 앱처럼 열립니다.</li>
+      <li><b>내 설정(<i class="fa-solid fa-gear"></i>)</b>에서 이름, 하루 인원, 가족 호칭을 정하세요.</li>
+      <li><b>명단 넣기</b> — 한 명씩은 [신규]. 여러 명은 <b>빈 양식 CSV</b>를 엑셀로 채운 뒤 [가져오기].</li>
+      <li><b>등급</b> — A: 매일 순환할 핵심 분, B: 주기에 맞춰 관리, C: 가끔. <b>타라인</b> 고객은 안부만 나가고 사업 이야기는 나가지 않습니다.</li>
+      <li><b>매일 아침</b> [오늘] 탭에 뜬 분들께 [문자] → 초안을 <b>내 말투로 조금 고쳐서</b> 보내고 [연락 완료]를 누르세요.</li>
+      <li><b>내부 메모</b>는 손님에게 절대 보내지지 않습니다. 메모에 쓴 단어(헤모힘, 탈모, 관절…)에 맞춰 안부 문장이 골라집니다. <i class="fa-solid fa-key"></i> 버튼에서 단어 목록을 볼 수 있어요.</li>
+    </ol>
+    <div class="mt-3 bg-red-50 border border-red-200 rounded-lg p-3 text-[11.5px] text-red-900">
+      <b>꼭 지켜주세요</b><br>
+      · 명단은 <b>이 폰에만</b> 저장됩니다. 폰을 바꾸거나 인터넷 기록을 지우면 사라져요. <b>일주일에 한 번 [백업]</b>을 눌러 파일을 카톡 '나와의 채팅' 등에 보관하세요.<br>
+      · 백업 파일에는 고객 전화번호가 들어 있으니 다른 사람에게 보내지 마세요.<br>
+      · 효능을 장담하는 표현("병이 낫는다", "면역력이 좋아진다")은 덧붙이지 마세요.
+    </div>
+    <button onclick="closeHelp()" class="w-full mt-4 py-2.5 bg-indigo-600 text-white rounded-xl text-xs font-bold shadow">시작하기</button>
+  </div>
+</div>
+<div id="toast" class="fixed left-1/2 -translate-x-1/2 bottom-8 z-[60] hidden bg-slate-900 text-white text-xs px-4 py-2.5 rounded-full shadow-lg"></div>
+
+<script>
+/* P003 전용 고객 데이터 · 단순 난독화(암호 아님) */
+/* 개인정보 보호: 공개 배포본에는 고객 명단을 넣지 않습니다. [가져오기]로 CSV를 불러오면 이 기기 브라우저에만 저장됩니다. */
+window.CRM_SEED_B64='';
+</script>
+<script>
+/* ── 데이터 ── */
+const KEY='partner.crm.v1', SKEY='partner.crm.settings.v1';
+const DEFAULT_SET={myName:'',sign:false,qa:2,qb:1,honors:'',close:'오늘도 무리하지 마시고 편안한 하루 보내세요.',
+  closeFam:'밥 잘 챙겨 먹고, 조만간 목소리 들으러 또 연락할게.',lastBackup:'',seenHelp:false};
+let SET=Object.assign({},DEFAULT_SET);
+try{SET=Object.assign({},DEFAULT_SET,JSON.parse(localStorage.getItem(SKEY))||{});}catch(e){}
+let QTA=SET.qa, QTB=SET.qb, FOCUS=QTA+QTB;
+function saveSet(){try{localStorage.setItem(SKEY,JSON.stringify(SET));}catch(e){}}
+const K='';
+function decodeSeed(){
+  try{
+    if(!window.CRM_SEED_B64)return null;
+    const bin=atob(window.CRM_SEED_B64);
+    const out=new Uint8Array(bin.length);
+    for(let i=0;i<bin.length;i++)out[i]=bin.charCodeAt(i)^K.charCodeAt(i%K.length);
+    return JSON.parse(new TextDecoder().decode(out));
+  }catch(e){return null}
+}
+let customers=[], dueMode='all', currentView='today', activeId=null, state={people:[],log:[]};
+
+const todayStr=()=>{const d=new Date();return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0')};
+const esc=s=>String(s==null?'':s).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+
+function initData(){
+  let saved=null;
+  try{saved=JSON.parse(localStorage.getItem(KEY))}catch(e){}
+  const savedList=saved?(Array.isArray(saved)?saved:(Array.isArray(saved.list)?saved.list:null)):null;
+  if(savedList){customers=savedList;state.log=(saved&&saved.log)||[];migrate(saved);}
+  else{
+    const seed=decodeSeed();
+    customers=seed?seed.map(r=>Object.assign({},r)):[];
+    customers.forEach(c=>{c.touchDate='';c.cycle=c.cycle||30;if(!c.grade)c.grade='B';});
+    saveData();
+  }
+  const o={year:'numeric',month:'long',day:'numeric',weekday:'short'};
+  document.getElementById('currentDateDisplay').textContent=new Date().toLocaleDateString('ko-KR',o)+' 기준 · 집중 '+FOCUS+'명';
+  applyQuotaLabels();
+  if(!SET.seenHelp){openHelp();SET.seenHelp=true;saveSet();}
+  backupNudge();
+  renderApp();
+}
+/* ── 타라인 예외 : 가족·지인은 순환에 포함 (경고는 유지) ── */
+const TAR_FAMILY_RE=/친언니|언니|누나|형님|오빠|조카|가족|올케|남동생|여동생|친척|사촌|시누|며느리|사위|이모|고모|삼촌/;
+function isTarFamily(c){
+  if(!c.tar)return false;
+  return c.category==='가족'||TAR_FAMILY_RE.test((c.name||'')+' '+(c.feature||'')+' '+(c.memo||''));
+}
+function inRotation(c){ return !c.tar || isTarFamily(c); }
+
+/* 파트너용: 개인 마이그레이션 없음 */
+function migrate(){}
+let MIG=[];
+function saveData(mig){if(Array.isArray(mig))MIG=mig;
+  try{localStorage.setItem(KEY,JSON.stringify({v:3,list:customers,log:state.log,mig:MIG}));}
+  catch(e){toast('저장 실패 — 브라우저 저장 공간을 확인하세요')}}
+function toast(m){const t=document.getElementById('toast');t.textContent=m;t.classList.remove('hidden');
+  clearTimeout(t._t);t._t=setTimeout(()=>t.classList.add('hidden'),2400);}
+
+function daysSince(ds){
+  if(!ds||ds==='-')return 999;
+  const d=new Date(ds+'T00:00:00'),n=new Date(todayStr()+'T00:00:00');
+  return Math.floor((n-d)/86400000);
+}
+const isDoneToday=c=>c.touchDate===todayStr();
+const nextDate=c=>{const base=c.lastContact;if(!base||base==='-')return null;
+  const d=new Date(base+'T00:00:00');d.setDate(d.getDate()+(c.cycle||30));
+  return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0')};
+function priority(c){
+  if(isDoneToday(c))return -9999;
+  const el=daysSince(c.lastContact), over=el-(c.cycle||30);
+  let w=0;
+  if(c.category==='핵심'||c.category==='사업')w=4;
+  else if(c.category==='잠재')w=2;
+  else if(c.category==='타라인')w=-6;   /* 타라인은 뒤로 */
+  return over+w;
+}
+
+/* ── 초안 엔진 : 메모 원문은 절대 출력하지 않음 ── */
+function honorOf(c){
+  const n=c.name;
+  if(/남동생\s*댁|올케/.test(n))return '올케';
+  const custom=customHonor(n); if(custom)return custom;
+  if(/원장/.test(n))return '원장님';
+  if(/목사/.test(n))return '목사님';
+  if(/실장/.test(n))return '실장님';
+  if(/사장/.test(n))return '사장님';
+  return n+' 님';
+}
+function honorMap(){
+  const m=[];String(SET.honors||'').split(/\n/).forEach(l=>{const i=l.indexOf('=');if(i>0){const k=l.slice(0,i).trim(),v=l.slice(i+1).trim();if(k&&v)m.push([k,v]);}});
+  return m;
+}
+function customHonor(n){for(const [k,v] of honorMap()){if(n.trim().startsWith(k))return v;}return '';}
+function isFamilyTone(c){return c.category==='가족'||/남동생|올케|언니|누나|오빠|형님|여동생/.test(c.name)}
+
+/* ── 키워드 사전 : 왼쪽부터 먼저 걸리는 순서 ── */
+const BRANCHES=[
+ {k:'수술·투병', re:/수술|입원|병원|투병|항암|치료 중|아팠|아프|다쳤/, not:/(지인|선물)[^,.]*(수술|입원|투병|항암)|(수술|입원|투병|항암)[^,.]*(지인|선물)/,
+  body:'요즘 몸은 좀 어떠신가요. 회복이 더디면 마음도 힘드실 텐데, 무리하지 마시고 천천히 챙기시면 좋겠습니다. 필요한 것 있으시면 말씀만 주세요.'},
+ {k:'콜라겐', re:/콜라겐/,
+  body:'지난번에 드린 콜라겐은 잘 챙겨 드시고 계신가요? 맛이나 드시는 편안함이 어떠신지 궁금해서 여쭤봅니다.'},
+ {k:'눈·시력', re:/루테인|루아잔틴|눈이|안구|시력|눈 건조/,
+  body:'요즘 화면 보는 시간이 길어지면 눈이 금방 피로해지더라고요. 챙겨 드신 제품 잘 드시고 계신지, 불편한 점은 없으신지 궁금합니다.'},
+ {k:'탈모·두피', re:/탈모|샴푸|생모단수|프로틴인텐시브|두피|머리카락/,
+  body:'환절기 바람에 두피가 부쩍 건조해지는 때예요. 샴푸 쓰실 때 거품을 내어 두피를 가볍게 마사지하듯 감으시면 기분이 한결 낫더라고요. 사용감은 어떠신지요?'},
+ {k:'헤모힘', re:/헤모힘/,
+  body:'일교차가 커지는 때라 기력 관리가 신경 쓰이실 것 같아요. 헤모힘은 거르지 않고 챙겨 드시고 계신지 궁금해서 안부 남깁니다.'},
+ {k:'관절·장', re:/터마신|마이크로바이옴|관절|무릎|허리|디스크|장이|장 건강|유산균|변비|소화/,
+  body:'요즘 무릎이나 허리는 좀 어떠신가요? 챙겨 드신 제품 잘 드시고 계신지, 불편한 데는 없으신지 궁금해서 연락드렸어요.'},
+ {k:'혈당·혈압', re:/혈당|당뇨|혈압|콜레스테롤|고지혈/,
+  body:'환절기에는 몸이 부쩍 예민해지더라고요. 챙겨 드시는 것들 빠뜨리지 마시고, 컨디션 잘 살피시길 바랍니다. 힘드신 데는 없으신지요.'},
+ {k:'피로·수면', re:/피로|기력|만성|잠을|불면|수면|피곤|지쳐|면역/,
+  body:'요즘 잠은 잘 주무시는지, 아침에 몸이 무겁지는 않으신지 궁금합니다. 바쁘실수록 쉬는 시간을 꼭 챙기셨으면 좋겠어요.'},
+ {k:'체중·다이어트', re:/다이어트|체중|체지방|감량|살이/,
+  body:'요즘 몸 관리 어떻게 하고 계신가요? 무리한 방법보다 매일 조금씩 움직이는 게 오래 간다고 하더라고요. 컨디션은 좀 어떠신지요.'},
+ {k:'오메가·비타민', re:/오메가|칼마디|비타민(?!크림)|혈행|파워비타|비타C|엽산/,
+  body:'챙겨 드시는 제품들 잘 드시고 계신가요? 날이 차가워지면 몸이 굳기 쉬워서 가볍게 걷기라도 하시면 좋겠다는 생각이 들더라고요.'},
+ {k:'아자몰', re:/아자몰/,
+  body:'아자몰에서 받으신 물건들은 요긴하게 잘 쓰고 계신가요? 날이 차가워지니 건강 잘 챙기시고, 필요한 것 생기면 편하게 말씀해 주세요.'},
+ {k:'물·미네랄', re:/해양심층수|미네랄|물을|물 마시|생수/,
+  body:'요즘 물은 자주 챙겨 드시고 계신가요? 날이 건조해지면 물 마시는 게 제일 좋더라고요. 지난번에 드신 물은 어떠셨는지도 궁금합니다.'},
+ {k:'커피·차', re:/커피|믹스커피|차를|홍차|녹차/,
+  body:'사무실에서 드시던 커피는 슬슬 떨어질 때가 됐지 싶어서요. 필요하시면 미리 챙겨드릴게요. 요즘 어떻게 지내시는지도 궁금하네요.'},
+ {k:'반려동물', re:/반려견|반려동물|강아지|고양이|애견|댕댕/,
+  body:'강아지는 잘 지내고 있나요? 아이들 챙기시느라 바쁘실 텐데, 함께 쓰실 것들 필요하시면 편하게 말씀 주세요.'},
+ {k:'운동·취미', re:/골프|축구|헬스|등산|운동|테니스|수영/,
+  body:'요즘 운동은 꾸준히 하고 계신가요? 하시고 나면 몸이 가벼워지긴 하는데 다음 날이 걱정되더라고요. 컨디션 잘 챙기시길 바랍니다.'},
+ {k:'스킨케어', re:/더페임|필오프|클렌져|아이컴플렉스|선크림|립스틱|화장품|스킨|로션|앰플|크림/,
+  body:'요즘 건조해서 피부가 당기지는 않으신지요. 지난번에 쓰신 것 잘 맞으셨는지, 쓰시면서 불편한 점은 없으신지 궁금해서 안부 남깁니다.'},
+ {k:'생필품', re:/간장|미역|화장지|미용티슈|주방세제|세제|치약|칫솔|생필품|행주|수세미|비누/,
+  body:'집에서 매일 쓰는 것들 슬슬 떨어질 때가 됐지 싶어서 여쭤봅니다. 떨어지기 전에 미리 챙겨드리면 좋을 것 같아서요. 필요한 것 있으시면 편하게 말씀해 주세요.'},
+ {k:'매장·자영업', re:/국밥|반점|다방|반찬|수선|시장|매장|가게|식당|장사/,
+  body:'매일 장사하시느라 몸은 좀 어떠신지요. 바쁘실수록 끼니 거르지 마시고, 가게에서 자주 쓰는 것들 필요하시면 편하게 말씀 주세요.'},
+ {k:'영업·법인', re:/보험|렌탈|영업|법인|코웨이|설계사|B2B/,
+  body:'요즘 일은 잘 풀리고 계신가요? 바쁘게 뛰시느라 지치셨을 것 같아 안부 여쭙니다. 서로 도움 될 일이 있으면 편하게 말씀 주세요.'},
+ {k:'부업·사업제안', re:/부업|사업|플랜|리쿠르|스폰서|은퇴|수익|소득/,
+  body:'지난번에 말씀 나눴던 일, 요즘 어떻게 생각하고 계신지 궁금해서 연락드렸어요. 급하게 결정하실 일은 아니니 편하실 때 차 한잔 하시죠.'},
+ {k:'소개·추천', re:/소개|추천|지인|친구분|동생분|언니분/,
+  body:'지난번에 소개해 주신 분 잘 만나 뵈었어요. 덕분에 좋은 인연이 생겼습니다. 늘 감사한 마음이고, 요즘 어떻게 지내시는지도 궁금하네요.'},
+ {k:'가족 이벤트', re:/이사|입주|자녀|아들|딸|학원|입시|결혼|출산|돌|명절|생신|생일|졸업/,
+  body:'집안에 좋은 일 있으셨다니 저도 기쁩니다. 바쁘고 정신없이 지나가실 텐데, 챙기실 것 많으시면 편하게 말씀 주세요. 가족분들도 안녕하신지요.'},
+ {k:'여행', re:/여행|출장|해외|관광|휴가/,
+  body:'여행 다녀오셨다니 좋으셨겠어요. 다녀오시고 몸은 좀 어떠신지, 피로는 풀리셨는지 궁금합니다. 사진 있으면 나중에 보여주세요.'},
+ {k:'영상', re:/영상|유튜브|말씀|설교/,
+  body:'보시면 마음이 조금 놓이는 영상 하나 보내드릴까 해서 연락드렸어요. 요즘 어떻게 지내시는지도 궁금하네요.'},
+ {k:'수당', re:/수당|후원|PV/,
+  body:'지난번에 말씀드린 일로 좋은 소식이 있어서 인사드립니다. 늘 건강 챙기시며 지내시는 모습이 참 좋습니다.'}
+];
+
+function generateDraft(c){
+  const h=honorOf(c), src=((c.product||'')+' '+(c.feature||'')+' '+(c.memo||''));
+  const family=isFamilyTone(c);
+  let body='', key='';
+  if(c.tar){
+    key='타라인';
+    body=family
+      ? '요즘 날씨 확 쌀쌀해졌는데 몸은 괜찮아? 별일 없나 궁금해서 연락했어. 필요한 거 있으면 편하게 말해.'
+      : '오랜만에 별일 없으신지 궁금해서 연락드렸어요. 요즘 날씨가 확 쌀쌀해져서 몸조리 잘 하시라고 안부만 남깁니다. 필요한 건 없으신지요.';
+  } else {
+    for(const b of BRANCHES){ if(b.re.test(src)&&!(b.not&&b.not.test(src))){ body=b.body; key=b.k; break; } }
+    if(!body){
+      key='기본 안부';
+      body='별일 없으신지, 요즘 어떻게 지내시는지 궁금해서 안부 남깁니다. 필요한 것 있으시면 편하게 말씀해 주세요.';
+    }
+  }
+  const open = family ? h+', 잘 지내?' : h+', 안녕하세요!';
+  const close = family ? (SET.closeFam||DEFAULT_SET.closeFam) : (SET.close||DEFAULT_SET.close);
+  lastBranch=key;
+  const sign = (SET.sign&&SET.myName&&!family) ? ' - '+SET.myName+' 드림' : '';
+  return open+' '+body+' '+close+sign;
+}
+var lastBranch='';
+
+function branchOf(c){
+  if(c.tar)return '타라인';
+  const src=((c.product||'')+' '+(c.feature||'')+' '+(c.memo||''));
+  for(const b of BRANCHES){ if(b.re.test(src)&&!(b.not&&b.not.test(src))) return b.k; }
+  return '기본 안부';
+}
+
+/* ── 오늘의 몫 : A 2명 + B 1명 (채우면 그 조합으로 고정) ── */
+function pickQuota(list,n){
+  const done=list.filter(isDoneToday);
+  if(done.length>=n)return done.slice(0,n);
+  const pend=list.filter(c=>!isDoneToday(c)).sort((x,y)=>priority(y)-priority(x));
+  return [...done,...pend.slice(0,n-done.length)];
+}
+function focusList(){
+  const A=customers.filter(c=>c.grade==='A'&&inRotation(c));
+  const B=customers.filter(c=>c.grade==='B'&&inRotation(c));
+  let out=pickQuota(A,QTA).concat(pickQuota(B,QTB));
+  /* B가 없으면 A로 채워 3명 유지 */
+  if(out.length<FOCUS){
+    const used=new Set(out.map(c=>c.id));
+    const spare=A.filter(c=>!used.has(c.id)).sort((x,y)=>priority(y)-priority(x));
+    out=out.concat(spare.slice(0,FOCUS-out.length));
+  }
+  const rank=c=>isDoneToday(c)?1:0;
+  return out.sort((x,y)=>rank(x)-rank(y)||priority(y)-priority(x));
+}
+
+/* ── 주기 빠른 필터 ── */
+function setDue(m){ dueMode=m; if(currentView!=='all'){switchView('all');return;} renderApp(); }
+function chipPaint(){
+  const ids={all:'due-all',due:'due-due',soon:'due-soon',never:'due-never'};
+  for(const k in ids){const el=document.getElementById(ids[k]);if(el)el.classList.toggle('on',dueMode===k);}
+  const cnt=document.getElementById('dueCnt');
+  if(cnt)cnt.textContent='('+customers.filter(c=>!isDoneToday(c)&&daysSince(c.lastContact)>=(c.cycle||30)).length+')';
+}
+
+/* ── 렌더 ── */
+function switchView(v){
+  currentView=v;
+  const T=document.getElementById('tabTodayBtn'),A=document.getElementById('tabAllBtn'),L=document.getElementById('tabLogBtn');
+  const base='px-4 py-2.5 text-sm border-b-2 flex items-center gap-2 whitespace-nowrap ';
+  const on=base+'font-bold border-indigo-600 text-indigo-600';
+  const off=base+'font-medium border-transparent text-slate-500 hover:text-slate-800';
+  T.className=v==='today'?on:off; A.className=v==='all'?on:off; L.className=v==='log'?on:off;
+  document.getElementById('filterSection').classList.toggle('hidden',v!=='all');
+  document.getElementById('logSection').classList.toggle('hidden',v!=='log');
+  renderApp();
+}
+
+function renderApp(){
+  const t=todayStr();
+  document.getElementById('statTotal').textContent=customers.length+'명';
+  document.getElementById('badgeAllCount').textContent='('+customers.length+')';
+  let overdue=0,done=0;
+  customers.forEach(c=>{ if(daysSince(c.lastContact)>=(c.cycle||30)&&!isDoneToday(c))overdue++;
+    if(isDoneToday(c))done++; });
+  document.getElementById('statOverdue').textContent=overdue+'명';
+  document.getElementById('statCompletedToday').textContent=done+'명';
+  chipPaint();
+
+  const Apool=customers.filter(c=>c.grade==='A'&&inRotation(c));
+  const Bpool=customers.filter(c=>c.grade==='B'&&inRotation(c));
+  const famTar=customers.filter(c=>c.tar&&isTarFamily(c)).length;
+  const Adue=Apool.filter(c=>!isDoneToday(c)&&priority(c)>0).length;
+  const Bdue=Bpool.filter(c=>!isDoneToday(c)&&priority(c)>0).length;
+  const tA=Math.ceil(Apool.length/QTA)||1, tB=QTB?Math.ceil(Bpool.length/QTB):0;
+  document.getElementById('apoolLine').innerHTML=Apool.length
+    ? `<i class="fa-solid fa-arrows-rotate text-indigo-500"></i> 오늘 몫 <b class="text-indigo-700">A${QTA}+B${QTB}</b>`
+      +` <span class="whitespace-nowrap">· A ${Apool.length}명 <span class="text-slate-400">(${tA}일 주기)</span> 지난 <b class="text-amber-600">${Adue}</b></span>`
+      +` <span class="whitespace-nowrap">· B ${Bpool.length}명 <span class="text-slate-400">(${tB}일 주기)</span> 지난 <b class="text-amber-600">${Bdue}</b></span>`
+      +` <span class="whitespace-nowrap text-slate-400">· C ${customers.filter(c=>c.grade==='C').length}명 (순환 제외)</span>`
+      +` <span class="whitespace-nowrap text-amber-600">· 타라인 가족 ${famTar}명 순환 포함</span>`
+    : '<span class="text-red-500">A등급 고객이 없습니다 — 전체 명단에서 등급을 지정해 주세요.</span>';
+
+  if(!customers.length&&currentView!=='log'){
+    document.getElementById('apoolLine').innerHTML='';
+    document.getElementById('statTodayPending').textContent='0 / '+FOCUS;
+    document.getElementById('badgeTodayCount').textContent=0;
+    document.getElementById('customerListContainer').innerHTML=`<div class="bg-white rounded-xl p-8 border border-dashed border-slate-300 text-center text-sm text-slate-500">
+      <i class="fa-solid fa-lock text-2xl text-indigo-400 mb-2"></i>
+      <p class="font-semibold text-slate-700">고객 명단이 비어 있습니다</p>
+      <p class="mt-1">상단 <b>[가져오기]</b>로 백업 CSV를 불러오거나 <b>[신규]</b>로 추가하세요.</p>
+      <p class="mt-1 text-xs">명단은 이 기기 브라우저에만 저장되며 인터넷에 올라가지 않습니다.</p></div>`;
+    return;
+  }
+  if(currentView==='log'){renderLog();document.getElementById('customerListContainer').innerHTML='';return;}
+
+  const box=document.getElementById('customerListContainer'); box.innerHTML='';
+  let list=[];
+  if(currentView==='today'){
+    list=focusList();
+    const doneN=list.filter(isDoneToday).length;
+    document.getElementById('badgeTodayCount').textContent=doneN+'/'+list.length;
+    document.getElementById('statTodayPending').textContent=doneN+' / '+FOCUS;
+  }else{
+    const q=(document.getElementById('searchInput').value||'').trim().toLowerCase();
+    const cat=document.getElementById('categoryFilter').value;
+    const gr=document.getElementById('gradeFilter').value;
+    list=customers.filter(c=>{
+      const mCat=(cat==='ALL')||c.category===cat;
+      const mGr=(gr==='ALL')||c.grade===gr;
+      const hay=[c.name,c.phone,c.product,c.feature,c.memberNo].join(' ').toLowerCase();
+      const el=daysSince(c.lastContact), cyc=c.cycle||30;
+      let mDue=true;
+      if(dueMode==='due')  mDue=!isDoneToday(c)&&el>=cyc;
+      if(dueMode==='soon') mDue=!isDoneToday(c)&&el<cyc&&(cyc-el)<=7;
+      if(dueMode==='never')mDue=!c.lastContact||c.lastContact==='-';
+      return mCat&&mGr&&mDue&&(!q||hay.includes(q));
+    }).sort((a,b)=>{
+      const ta=(a.tar&&!isTarFamily(a))?1:0, tb=(b.tar&&!isTarFamily(b))?1:0;
+      if(ta!==tb)return ta-tb;            /* 타라인은 맨 아래 (가족·지인 예외) */
+      return priority(b)-priority(a);
+    });
+  }
+  if(!list.length){const msg=dueMode==='due'?'주기가 지난 고객이 없습니다 — 오늘은 다 챙기셨습니다 👍'
+      :dueMode==='soon'?'7일 안에 도래하는 고객이 없습니다.'
+      :dueMode==='never'?'연락 기록이 없는 고객이 없습니다.'
+      :'조건에 맞는 고객이 없습니다.';
+    box.innerHTML='<div class="bg-white rounded-xl border border-slate-200 p-8 text-center text-sm text-slate-500">'+msg+'</div>';return;}
+
+  list.forEach((c,idx)=>{
+    const el=daysSince(c.lastContact), cyc=c.cycle||30, over=el-cyc, doneT=isDoneToday(c);
+    const draft=generateDraft(c);
+    const dupWarn=c.memberWarn?'<span class="text-[10px] text-red-600 font-bold ml-1" title="회원번호 중복 — 전산 확인">⚠</span>':'';
+    const card=document.createElement('div');
+    card.className='bg-white rounded-xl p-4 border transition shadow-sm hover:shadow '+
+      (doneT?'border-emerald-300 bg-emerald-50/20':over>=0?'border-amber-300 ring-1 ring-amber-100':'border-slate-200');
+    card.innerHTML=`
+      <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-2 border-b border-slate-100 pb-3">
+        <div class="flex items-center space-x-2 flex-wrap">
+          ${currentView==='today'?`<span class="w-6 h-6 rounded-full bg-indigo-600 text-white font-bold text-xs flex items-center justify-center">${idx+1}</span>`:''}
+          <span class="font-bold text-base text-slate-900">${esc(c.name)}</span>
+          <span class="gr gr-${esc(c.grade||'B')}">${esc(c.grade||'B')}</span>
+          ${c.tar&&isTarFamily(c)?'<span class="gr" style="background:#fef3c7;color:#92400e">타라인·가족</span>':''}
+          <span class="status-badge border cat-${esc(c.category)}">${esc(c.category)}</span>
+          ${c.memberNo&&c.memberNo!=='-'?`<span class="text-xs text-slate-400 font-mono">#${esc(c.memberNo)}${dupWarn}</span>`:''}
+        </div>
+        <div class="flex items-center space-x-2 text-xs">
+          <span class="px-2 py-0.5 rounded text-slate-500 bg-slate-100">주기 ${cyc}일</span>
+          ${doneT?'<span class="px-2 py-0.5 rounded font-bold bg-emerald-100 text-emerald-700">오늘 완료</span>'
+            :over>=0?`<span class="px-2 py-0.5 rounded font-bold bg-amber-100 text-amber-800">${over===0?'오늘 주기 도래':over+'일 초과'}</span>`
+            :`<span class="px-2 py-0.5 rounded text-slate-600 bg-slate-100">${-over}일 남음</span>`}
+        </div>
+      </div>
+      <div class="mt-3 grid grid-cols-1 sm:grid-cols-2 gap-2 text-xs text-slate-600">
+        <div>
+          <p><strong class="text-slate-700">특징:</strong> ${esc(c.feature||'-')}</p>
+          <p class="mt-1"><strong class="text-slate-700">제품:</strong> <span class="text-indigo-600 font-medium">${esc(c.product||'-')}</span></p>
+          <p class="mt-1"><strong class="text-slate-700">내부메모:</strong> <span class="text-slate-500">${esc(c.memo||'-')}</span></p>
+        </div>
+        <div class="bg-indigo-50/60 p-2.5 rounded-lg border border-indigo-100">
+          <p class="font-semibold text-indigo-900 mb-1 text-[11px]"><i class="fa-solid fa-wand-sparkles text-indigo-500"></i> 초안 <span class="text-indigo-400 font-normal">· ${esc(branchOf(c))}</span></p>
+          <p class="text-slate-700 lineclamp leading-relaxed text-[11px]">${esc(draft)}</p>
+        </div>
+      </div>
+      <div class="mt-4 pt-3 border-t border-slate-100 flex items-center justify-between gap-2 flex-wrap">
+        <div class="flex items-center space-x-1.5 flex-wrap">
+          <a href="tel:${esc(c.phone)}" class="px-3 py-1.5 bg-emerald-50 text-emerald-700 hover:bg-emerald-100 border border-emerald-200 rounded-lg text-xs font-semibold flex items-center gap-1"><i class="fa-solid fa-phone"></i> 통화</a>
+          <button onclick="openMessagePopup(${c.id})" class="px-3 py-1.5 bg-indigo-50 text-indigo-700 hover:bg-indigo-100 border border-indigo-200 rounded-lg text-xs font-bold flex items-center gap-1"><i class="fa-solid fa-comment-sms"></i> 초안 보기</button>
+          <button onclick="editCustomer(${c.id})" class="px-2.5 py-1.5 bg-slate-50 text-slate-600 hover:bg-slate-100 border border-slate-200 rounded-lg text-xs"><i class="fa-solid fa-pen-to-square"></i></button>
+        </div>
+        <button onclick="toggleDone(${c.id})" class="px-3.5 py-1.5 rounded-lg text-xs font-bold ${doneT?'bg-slate-200 text-slate-600':'bg-indigo-600 text-white shadow'}">${doneT?'완료 취소':'연락 완료 체크'}</button>
+      </div>`;
+    box.appendChild(card);
+  });
+}
+
+function renderLog(){
+  const box=document.getElementById('logSection');
+  const logs=[...state.log].reverse().slice(0,40);
+  const todayCnt=state.log.filter(l=>l.d===todayStr()).length;
+  box.innerHTML=`<div class="bg-white rounded-xl border border-slate-200 p-4 shadow-sm">
+    <div class="flex items-center justify-between mb-3">
+      <h3 class="font-bold text-sm">연락 기록</h3>
+      <span class="text-xs text-slate-500">오늘 ${todayCnt}건 · 전체 ${state.log.length}건</span>
+    </div>
+    ${logs.length?logs.map(l=>`<div class="flex items-center justify-between text-xs py-2 border-b border-slate-100 last:border-0">
+      <span class="font-semibold text-slate-800">${esc(l.name)}</span>
+      <span class="text-slate-500">${esc(l.d)}</span></div>`).join('')
+      :'<p class="text-xs text-slate-400 py-4 text-center">아직 기록이 없습니다. 연락 완료 체크를 누르면 여기에 쌓입니다.</p>'}
+  </div>`;
+}
+
+/* ── 완료 처리 (날짜 기반 → 다음 날 자동 복귀) ── */
+function toggleDone(id){
+  const c=customers.find(x=>x.id===id); if(!c)return;
+  if(isDoneToday(c)){c.touchDate='';toast(c.name+' 완료를 취소했습니다');}
+  else{
+    c.touchDate=todayStr(); c.lastContact=todayStr();
+    state.log.push({d:todayStr(),name:c.name});
+    toast(c.name+' 완료! 다음 연락은 '+(c.cycle||30)+'일 뒤입니다');
+  }
+  saveData(); renderApp();
+}
+
+/* ── 초안 모달 ── */
+function openMessagePopup(id){
+  const c=customers.find(x=>x.id===id); if(!c)return;
+  activeId=id;
+  document.getElementById('msgModalRecipient').textContent=honorOf(c)+' 맞춤 초안';
+  document.getElementById('msgModalContent').value=generateDraft(c);
+  document.getElementById('tarWarn').classList.toggle('hidden',!c.tar);
+  updateSmsLink();
+  const m=document.getElementById('messageModal'); m.classList.remove('hidden'); m.classList.add('flex');
+}
+function regenerateActiveMessage(){const c=customers.find(x=>x.id===activeId);if(!c)return;
+  document.getElementById('msgModalContent').value=generateDraft(c);updateSmsLink();}
+function updateSmsLink(){const c=customers.find(x=>x.id===activeId);if(!c)return;
+  const txt=document.getElementById('msgModalContent').value;
+  document.getElementById('msgModalSendLink').href='sms:'+c.phone+'?body='+encodeURIComponent(txt);}
+function copyMessageText(){
+  const txt=document.getElementById('msgModalContent').value;
+  if(navigator.clipboard&&window.isSecureContext){
+    navigator.clipboard.writeText(txt).then(()=>toast('복사 완료 — 카톡에 붙여넣으세요'),()=>fallbackCopy(txt));
+  }else fallbackCopy(txt);
+}
+function fallbackCopy(txt){
+  const ta=document.createElement('textarea');ta.value=txt;ta.style.position='fixed';ta.style.opacity='0.01';
+  document.body.appendChild(ta);ta.select();
+  try{document.execCommand('copy');toast('복사 완료 — 카톡에 붙여넣으세요')}catch(e){toast('복사 실패 — 길게 눌러 직접 복사하세요')}
+  document.body.removeChild(ta);
+}
+function markDoneFromModal(){
+  closeMessageModal();
+  const c=customers.find(x=>x.id===activeId);
+  if(c&&!isDoneToday(c)){toggleDone(activeId);}
+  else if(c){toast('이미 오늘 완료 처리되어 있습니다');}
+}
+function closeMessageModal(){const m=document.getElementById('messageModal');m.classList.add('hidden');m.classList.remove('flex');}
+
+/* ── 고객 편집 ── */
+function openModal(){editCustomer(null);}
+function editCustomer(id){
+  const c=id?customers.find(x=>x.id===id):null;
+  document.getElementById('modalTitle').textContent=c?c.name+' 님 정보 수정':'새 고객 등록';
+  document.getElementById('formId').value=c?c.id:'';
+  document.getElementById('formName').value=c?c.name:'';
+  document.getElementById('formMemberNo').value=c?(c.memberNo==='-'?'':c.memberNo):'';
+  document.getElementById('formPhone').value=c?c.phone:'';
+  document.getElementById('formCategory').value=c?c.category:'일반';
+  document.getElementById('formGrade').value=c?(c.grade||'B'):'B';
+  document.getElementById('formCycle').value=c?(c.cycle||30):30;
+  document.getElementById('formLastContact').value=c?(c.lastContact||''):'';
+  document.getElementById('formFeature').value=c?(c.feature||''):'';
+  document.getElementById('formProduct').value=c?(c.product||''):'';
+  document.getElementById('formMemo').value=c?(c.memo||''):'';
+  document.getElementById('btnDelete').classList.toggle('hidden',!c);
+  checkMemberDup();
+  const m=document.getElementById('customerModal');m.classList.remove('hidden');m.classList.add('flex');
+}
+function checkMemberDup(){
+  const v=(document.getElementById('formMemberNo').value||'').replace(/\*/g,'').trim();
+  const me=document.getElementById('formId').value;
+  const hit=v&&customers.some(c=>String(c.id)!==String(me)&&String(c.memberNo||'').replace(/\*/g,'').trim()===v);
+  document.getElementById('memberWarn').classList.toggle('hidden',!hit);
+  return hit;
+}
+function saveCustomer(e){
+  e.preventDefault();
+  const id=document.getElementById('formId').value;
+  const dup=checkMemberDup();
+  if(dup&&!confirm('회원번호가 다른 고객과 겹칩니다. 그래도 저장할까요?\n(전산에서 확인하신 뒤 수정하시길 권합니다)'))return;
+  const obj={
+    name:document.getElementById('formName').value.trim(),
+    memberNo:document.getElementById('formMemberNo').value.trim()||'-',
+    phone:document.getElementById('formPhone').value.trim(),
+    category:document.getElementById('formCategory').value,
+    grade:document.getElementById('formGrade').value,
+    cycle:parseInt(document.getElementById('formCycle').value,10)||30,
+    lastContact:document.getElementById('formLastContact').value,
+    feature:document.getElementById('formFeature').value.trim(),
+    product:document.getElementById('formProduct').value.trim(),
+    memo:document.getElementById('formMemo').value.trim()
+  };
+  if(id){ const i=customers.findIndex(c=>String(c.id)===String(id));
+    if(i>-1){customers[i]=Object.assign(customers[i],obj); if(obj.category==='타라인')customers[i].tar=true;}
+  } else {
+    obj.id=Date.now(); obj.touchDate=''; if(obj.category==='타라인')obj.tar=true;
+    customers.push(obj);
+  }
+  saveData();closeModal();renderApp();toast('저장했습니다');
+}
+function closeModal(){const m=document.getElementById('customerModal');m.classList.add('hidden');m.classList.remove('flex');}
+function delCustomer(){
+  const id=document.getElementById('formId').value; if(!id)return;
+  const c=customers.find(x=>String(x.id)===String(id));
+  if(!c||!confirm(c.name+' 님을 목록에서 삭제할까요?'))return;
+  customers=customers.filter(x=>String(x.id)!==String(id));
+  saveData();closeModal();renderApp();toast('삭제했습니다');
+}
+
+/* ── CSV 백업 ── */
+function exportCSV(){
+  const head='성명,연락처,회원번호,등급,그룹,주기,마지막연락,다음연락,특징,제품,내부메모,타라인';
+  const rows=customers.map(c=>[c.name,c.phone,c.memberNo,c.grade||'B',c.category,c.cycle,c.lastContact,nextDate(c)||'',c.feature,c.product,c.memo,c.tar?'Y':'']
+    .map(v=>'"'+String(v==null?'':v).replace(/"/g,'""')+'"').join(','));
+  const blob=new Blob(['\ufeff'+head+'\n'+rows.join('\n')],{type:'text/csv'});
+  const a=document.createElement('a');a.href=URL.createObjectURL(blob);
+  a.download='고객대장_'+todayStr().replace(/-/g,'')+'.csv';a.click();
+  SET.lastBackup=todayStr();saveSet();
+  toast(customers.length+'명 CSV를 내려받았습니다');
+}
+/* ── CSV 가져오기 (백업 파일 그대로 불러오기) ── */
+function parseCSV(text){
+  const rows=[];let row=[],f='',q=false;text=text.replace(/^\ufeff/,'');
+  for(let i=0;i<text.length;i++){const ch=text[i];
+    if(q){ if(ch==='"'){ if(text[i+1]==='"'){f+='"';i++;} else q=false; } else f+=ch; }
+    else if(ch==='"')q=true;
+    else if(ch===','){row.push(f);f='';}
+    else if(ch==='\n'||ch==='\r'){ if(ch==='\r'&&text[i+1]==='\n')i++;
+      row.push(f);f=''; if(row.some(v=>v.trim()))rows.push(row); row=[]; }
+    else f+=ch;
+  }
+  row.push(f); if(row.some(v=>v.trim()))rows.push(row);
+  return rows;
+}
+function importCSV(e){
+  const file=e.target.files[0]; if(!file)return;
+  const rd=new FileReader();
+  rd.onload=()=>{
+    const rows=parseCSV(rd.result);
+    if(rows.length<2){alert('불러올 데이터가 없습니다.');return;}
+    const H=rows[0].map(h=>h.trim()), col=n=>H.indexOf(n);
+    const pick=(r,...names)=>{for(const n of names){const j=col(n);if(j>-1)return (r[j]||'').trim();}return '';};
+    if(col('성명')<0){alert('CSV 첫 줄에 "성명" 열이 필요합니다. 이 앱의 [백업] 파일을 사용해 주세요.');return;}
+    const base=Date.now();
+    const list=rows.slice(1).map((r,i)=>{
+      const cat=pick(r,'그룹')||'일반', g=pick(r,'등급').toUpperCase();
+      const o={id:base+i,name:pick(r,'성명'),phone:pick(r,'연락처'),memberNo:pick(r,'회원번호')||'-',
+        grade:['A','B','C'].includes(g)?g:'B',category:cat,cycle:parseInt(pick(r,'주기'),10)||30,
+        lastContact:pick(r,'마지막연락','마지막연락일'),feature:pick(r,'특징'),product:pick(r,'제품'),
+        memo:pick(r,'내부메모','메모'),touchDate:''};
+      if(/^(y|yes|o|1|true|예)$/i.test(pick(r,'타라인'))||cat==='타라인')o.tar=true;
+      return o;
+    }).filter(o=>o.name);
+    if(!list.length){alert('불러올 고객이 없습니다.');return;}
+    let replace=true;
+    if(customers.length)replace=confirm(list.length+'명을 읽었습니다.\n\n[확인] 지금 명단을 이 파일로 교체\n[취소] 이름이 겹치지 않는 사람만 추가');
+    if(replace)customers=list;
+    else{const names=new Set(customers.map(c=>c.name.trim()));
+      list.forEach(o=>{if(!names.has(o.name)){customers.push(o);names.add(o.name);}});}
+    saveData();renderApp();toast(list.length+'명 불러오기 완료');
+  };
+  rd.readAsText(file,'utf-8'); e.target.value='';
+}
+/* ── 내 설정 · 사용법 · 백업 알림 ── */
+function showM(id){const m=document.getElementById(id);m.classList.remove('hidden');m.classList.add('flex');}
+function hideM(id){const m=document.getElementById(id);m.classList.add('hidden');m.classList.remove('flex');}
+function openHelp(){showM('helpModal');}
+function closeHelp(){hideM('helpModal');}
+function openSettings(){
+  document.getElementById('sName').value=SET.myName||'';
+  document.getElementById('sSign').checked=!!SET.sign;
+  document.getElementById('sQa').value=String(SET.qa);
+  document.getElementById('sQb').value=String(SET.qb);
+  document.getElementById('sHonors').value=SET.honors||'';
+  document.getElementById('sClose').value=SET.close||'';
+  document.getElementById('sCloseFam').value=SET.closeFam||'';
+  showM('setModal');
+}
+function closeSet(){hideM('setModal');}
+function saveSettings(){
+  SET.myName=document.getElementById('sName').value.trim();
+  SET.sign=document.getElementById('sSign').checked;
+  SET.qa=parseInt(document.getElementById('sQa').value,10)||2;
+  SET.qb=parseInt(document.getElementById('sQb').value,10)||0;
+  SET.honors=document.getElementById('sHonors').value;
+  SET.close=document.getElementById('sClose').value.trim()||DEFAULT_SET.close;
+  SET.closeFam=document.getElementById('sCloseFam').value.trim()||DEFAULT_SET.closeFam;
+  saveSet(); QTA=SET.qa; QTB=SET.qb; FOCUS=QTA+QTB;
+  applyQuotaLabels(); closeSet(); renderApp(); toast('설정을 저장했습니다');
+}
+function applyQuotaLabels(){
+  document.querySelectorAll('.quotaLbl').forEach(e=>e.textContent='A'+QTA+(QTB?'+B'+QTB:''));
+  const o={year:'numeric',month:'long',day:'numeric',weekday:'short'};
+  document.getElementById('currentDateDisplay').textContent=new Date().toLocaleDateString('ko-KR',o)+' 기준 · 집중 '+FOCUS+'명';
+}
+function backupNudge(){
+  if(!customers.length)return;
+  const last=SET.lastBackup?daysSince(SET.lastBackup):999;
+  if(last>=7)setTimeout(()=>toast(last>=999?'명단 백업을 한 번도 안 하셨어요 — 상단 [백업]을 눌러주세요':'마지막 백업 '+last+'일 전 — [백업]을 눌러주세요'),1200);
+}
+function openKw(){
+  document.getElementById('kwList').innerHTML=BRANCHES.map((b,i)=>
+    '<div class="flex gap-2 text-[11.5px] py-1 border-b border-slate-100 last:border-0">'
+    +'<span class="w-5 text-slate-400 font-mono shrink-0">'+(i+1)+'</span>'
+    +'<span class="font-bold text-slate-700 w-[76px] shrink-0">'+esc(b.k)+'</span>'
+    +'<span class="text-slate-500 leading-relaxed">'+esc(b.re.source.split('|').join(', '))+'</span></div>').join('')
+    +'<div class="flex gap-2 text-[11.5px] py-1"><span class="w-5 text-slate-400 font-mono shrink-0">-</span>'
+    +'<span class="font-bold text-slate-700 w-[76px] shrink-0">타라인</span><span class="text-slate-500">타라인 고객은 무조건 안부 문장</span></div>'
+    +'<div class="flex gap-2 text-[11.5px] py-1"><span class="w-5 text-slate-400 font-mono shrink-0">-</span>'
+    +'<span class="font-bold text-slate-700 w-[76px] shrink-0">기본 안부</span><span class="text-slate-500">위 어디에도 안 걸릴 때</span></div>';
+  const m=document.getElementById('kwModal'); m.classList.remove('hidden'); m.classList.add('flex');
+}
+function closeKw(){const m=document.getElementById('kwModal');m.classList.add('hidden');m.classList.remove('flex');}
+document.getElementById('formMemberNo').addEventListener('input',checkMemberDup);
+document.addEventListener('keydown',e=>{if(e.key==='Escape'){closeModal();closeMessageModal();closeKw();closeSet();closeHelp();}});
+window.addEventListener('load',initData);
+</script>
+</body>
+</html>
