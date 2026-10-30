@@ -211,6 +211,11 @@
         <span class="text-xs font-semibold text-amber-700 bg-amber-50 border border-amber-200 rounded px-2 py-0.5"><i class="fa-solid fa-pen-nib"></i> 초안 — 보내기 전 한 줄만 고치세요</span>
         <button onclick="regenerateActiveMessage()" class="text-[11px] text-indigo-600 hover:text-indigo-800 font-bold flex items-center gap-1"><i class="fa-solid fa-arrows-rotate"></i> 다시</button>
       </div>
+      <div id="introBar" class="hidden text-xs bg-violet-50 border border-violet-200 rounded-lg p-2.5 space-y-1.5">
+        <label for="introSponsor" class="font-semibold text-violet-800">스폰서 성함 (모든 첫 인사에 들어갑니다)</label>
+        <input id="introSponsor" type="text" placeholder="예: 김OO 님" class="w-full px-2.5 py-1.5 border rounded-lg bg-white" oninput="onSponsorInput(this.value)">
+        <p id="introNote" class="text-violet-700"></p>
+      </div>
       <textarea id="msgModalContent" rows="8" oninput="updateSmsLink()" class="w-full p-3.5 text-xs leading-relaxed border rounded-xl bg-slate-50 focus:outline-none focus:border-indigo-500 text-slate-700"></textarea>
       <p id="tarWarn" class="hidden text-[11px] text-amber-700 bg-amber-50 border border-amber-200 rounded-lg p-2 leading-relaxed"><i class="fa-solid fa-triangle-exclamation"></i> 타라인 고객입니다 — 안부만 보내고 제품·사업 이야기는 넣지 마세요.</p>
       <div class="flex gap-2 pt-1">
@@ -220,6 +225,7 @@
         <a id="msgModalSendLink" href="#" class="flex-1 py-2.5 bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl text-xs font-bold flex items-center justify-center gap-1.5 shadow">
           <i class="fa-solid fa-paper-plane"></i> 문자 전송
         </a>
+        <button onclick="sendKakao(activeId,true)" class="flex-1 py-2.5 rounded-xl text-xs font-bold flex items-center justify-center gap-1.5 shadow" style="background:#FEE500;color:#191919"><i class="fa-solid fa-comment"></i> 카톡 보내기</button>
       </div>
       <button onclick="markDoneFromModal()" class="w-full mt-1 py-2.5 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl text-xs font-bold shadow">
         <i class="fa-solid fa-check"></i> 보냈습니다 · 연락 완료 처리
@@ -611,6 +617,8 @@ function renderApp(){
       <div class="mt-4 pt-3 border-t border-slate-100 flex items-center justify-between gap-2 flex-wrap">
         <div class="flex items-center space-x-1.5 flex-wrap">
           <a href="tel:${esc(c.phone)}" class="px-3 py-1.5 bg-emerald-50 text-emerald-700 hover:bg-emerald-100 border border-emerald-200 rounded-lg text-xs font-semibold flex items-center gap-1"><i class="fa-solid fa-phone"></i> 통화</a>
+          <button onclick="sendKakao(${c.id},false)" class="px-3 py-1.5 rounded-lg text-xs font-bold flex items-center gap-1 border" style="background:#FEE500;color:#191919;border-color:#E6CF00"><i class="fa-solid fa-comment"></i> 카톡</button>
+          ${c.tar?'':(c.introSent?`<button onclick="openIntro(${c.id})" class="px-2.5 py-1.5 rounded-lg text-[11px] border border-slate-200 text-slate-500 bg-white">첫 인사 ✓ ${esc(c.introSent.slice(5))}</button>`:`<button onclick="openIntro(${c.id})" class="px-3 py-1.5 rounded-lg text-xs font-bold flex items-center gap-1 border border-violet-300 bg-violet-50 text-violet-700"><i class="fa-solid fa-hand"></i> 첫 인사</button>`)}
           <button onclick="openMessagePopup(${c.id})" class="px-3 py-1.5 bg-indigo-50 text-indigo-700 hover:bg-indigo-100 border border-indigo-200 rounded-lg text-xs font-bold flex items-center gap-1"><i class="fa-solid fa-comment-sms"></i> 초안 보기</button>
           <button onclick="editCustomer(${c.id})" class="px-2.5 py-1.5 bg-slate-50 text-slate-600 hover:bg-slate-100 border border-slate-200 rounded-lg text-xs"><i class="fa-solid fa-pen-to-square"></i></button>
         </div>
@@ -650,6 +658,7 @@ function toggleDone(id){
 
 /* ── 초안 모달 ── */
 function openMessagePopup(id){
+  introMode=false; document.getElementById('introBar').classList.add('hidden');
   const c=customers.find(x=>x.id===id); if(!c)return;
   activeId=id;
   document.getElementById('msgModalRecipient').textContent=honorOf(c)+' 맞춤 초안';
@@ -659,6 +668,7 @@ function openMessagePopup(id){
   const m=document.getElementById('messageModal'); m.classList.remove('hidden'); m.classList.add('flex');
 }
 function regenerateActiveMessage(){const c=customers.find(x=>x.id===activeId);if(!c)return;
+  if(introMode){document.getElementById('msgModalContent').value=buildIntro(c);updateSmsLink();return;}
   document.getElementById('msgModalContent').value=generateDraft(c);updateSmsLink();}
 function updateSmsLink(){const c=customers.find(x=>x.id===activeId);if(!c)return;
   const txt=document.getElementById('msgModalContent').value;
@@ -669,6 +679,71 @@ function copyMessageText(){
     navigator.clipboard.writeText(txt).then(()=>toast('복사 완료 — 카톡에 붙여넣으세요'),()=>fallbackCopy(txt));
   }else fallbackCopy(txt);
 }
+/* ── 카톡 보내기 : 메시지를 담아 공유창 → 카카오톡 → 친구 선택 ── */
+/* ── 첫 인사 메시지 (고객 정보로 자동 생성 · 고객 이름은 코드에 없음) ── */
+let introMode=false;
+function getSponsor(){try{return localStorage.getItem('crm.sponsor')||''}catch(e){return ''}}
+function onSponsorInput(v){try{localStorage.setItem('crm.sponsor',v.trim())}catch(e){}
+  const c=customers.find(x=>x.id===activeId); if(c&&introMode){document.getElementById('msgModalContent').value=buildIntro(c);updateSmsLink();}}
+function introType(c){
+  if(c.tar)return 'tar';
+  const n=c.name||'', info=(c.feature||'')+' '+(c.memo||'');
+  const y=info.match(/'(\d\d)년생/); const elder=/원장/.test(n)||(y&&+y[1]>=20&&+y[1]<=50);
+  if(elder)return 'elder';
+  if(c.category==='사업'||c.category==='우측')return 'partner';
+  if(/사장/.test(n))return 'owner';
+  return 'consumer';
+}
+function introHonor(c){
+  const n=String(c.name||'').replace(/\s*\(.*?\)\s*/g,'').trim();
+  if(/남동생\s*댁|올케/.test(c.name))return '[성함] 님';
+  if(/원장/.test(n))return '원장님';
+  if(/목사/.test(n))return '목사님';
+  if(/(사장|실장|원장)$/.test(n))return n+'님';
+  return n+' 님';
+}
+function buildIntro(c){
+  const t=introType(c); if(t==='tar')return '';
+  const me="이은숙", sp=getSponsor()||'[스폰서님]', h=introHonor(c);
+  const closes=['쌀쌀해진 날씨에 감기 조심하세요!','일교차 큰 요즘, 따뜻하게 지내세요!','오늘도 편안한 하루 보내세요!'];
+  const close=closes[[...String(c.name||'')].reduce((a,ch)=>a+ch.charCodeAt(0),0)%3];
+  if(t==='elder')return `${h}, 평안하신지요. 애터미 제품을 쓰면서 사업도 함께 하는 ${me}입니다. ${sp} 소개로 인사 올립니다. 앞으로 애터미 주문이나 제품 쓰시다 궁금하신 점을 제가 가까이에서 도와드리게 되었습니다. 답장은 편하실 때 주셔도 괜찮습니다. 쌀쌀해진 날씨에 늘 건강하시길 바랍니다.`;
+  const head=`${h}, 안녕하세요! 애터미 제품을 쓰면서 사업도 함께 하는 ${me}입니다. ${sp} 소개로 연락드려요 😊 `;
+  if(t==='partner')return head+`앞으로 같은 팀에서 함께하게 되어 반가운 마음에 인사드려요. 주문이나 궁금한 점은 언제든 편하게 말씀 주세요. 답장은 편하실 때 주셔도 괜찮아요. ${close}`;
+  if(t==='owner')return head+`앞으로 애터미 주문이나 제품 쓰시다 궁금한 점을 제가 가까이에서 도와드리게 됐어요. 일로 바쁘실 텐데 답장은 편하실 때 주셔도 괜찮아요. ${close}`;
+  return head+`앞으로 애터미 주문이나 제품 쓰시다 궁금한 점을 제가 가까이에서 도와드리게 됐어요. 답장은 편하실 때 주셔도 괜찮아요. ${close}`;
+}
+const INTRO_NOTE={elder:'연세가 있으신 분이에요. 스폰서가 먼저 전화로 소개한 뒤, 카톡보다 전화로 인사드리는 걸 권해요.',
+  partner:'같은 팀 사업자예요. 답장이 오면 차 한잔 만남을 제안해 보세요.',
+  owner:'영업시간(점심·저녁)은 피해서 보내세요.',
+  consumer:'메모에 있는 건강·가족 이야기는 꺼내지 마세요. 평일 오전 10~12시, 오후 2~5시가 좋아요.'};
+function openIntro(id){
+  const c=customers.find(x=>x.id===id); if(!c)return;
+  if(c.tar){toast('타라인 고객은 연락 전에 스폰서와 먼저 상의하세요');return;}
+  activeId=id; introMode=true;
+  document.getElementById('msgModalRecipient').textContent=introHonor(c)+' · 첫 인사';
+  document.getElementById('introBar').classList.remove('hidden');
+  document.getElementById('introSponsor').value=getSponsor();
+  const t=introType(c), name=String(c.name||'');
+  document.getElementById('introNote').textContent=(INTRO_NOTE[t]||'')+(/남동생\s*댁|올케/.test(name)?' [성함]을 실제 이름으로 바꿔주세요.':'');
+  document.getElementById('msgModalContent').value=buildIntro(c);
+  document.getElementById('tarWarn').classList.add('hidden');
+  updateSmsLink();
+  const m=document.getElementById('messageModal'); m.classList.remove('hidden'); m.classList.add('flex');
+}
+async function sendKakao(id,fromModal){
+  const c=customers.find(x=>String(x.id)===String(id)); if(!c)return;
+  const txt=fromModal?document.getElementById('msgModalContent').value:generateDraft(c);
+  const who=String(c.name||'').replace(/\s*\(.*?\)\s*/g,'').trim();
+  if(navigator.share){
+    try{ await navigator.share({text:txt}); toast('카톡에서 \''+who+'\' 님을 골라 보내세요'); return; }
+    catch(e){ if(e&&e.name==='AbortError')return; }
+  }
+  if(navigator.clipboard&&window.isSecureContext){
+    try{ await navigator.clipboard.writeText(txt); toast('메시지 복사 완료 — 카톡에서 '+who+' 님 대화방에 붙여넣으세요'); return; }catch(e){}
+  }
+  fallbackCopy(txt);
+}
 function fallbackCopy(txt){
   const ta=document.createElement('textarea');ta.value=txt;ta.style.position='fixed';ta.style.opacity='0.01';
   document.body.appendChild(ta);ta.select();
@@ -678,6 +753,7 @@ function fallbackCopy(txt){
 function markDoneFromModal(){
   closeMessageModal();
   const c=customers.find(x=>x.id===activeId);
+  if(c&&introMode&&!c.introSent){c.introSent=todayStr();saveData();}
   if(c&&!isDoneToday(c)){toggleDone(activeId);}
   else if(c){toast('이미 오늘 완료 처리되어 있습니다');}
 }
@@ -746,8 +822,8 @@ function delCustomer(){
 
 /* ── CSV 백업 ── */
 function exportCSV(){
-  const head='성명,연락처,회원번호,등급,그룹,주기,마지막연락,다음연락,특징,제품,내부메모,타라인';
-  const rows=customers.map(c=>[c.name,c.phone,c.memberNo,c.grade||'B',c.category,c.cycle,c.lastContact,nextDate(c)||'',c.feature,c.product,c.memo,c.tar?'Y':'']
+  const head='성명,연락처,회원번호,등급,그룹,주기,마지막연락,다음연락,특징,제품,내부메모,타라인,첫인사';
+  const rows=customers.map(c=>[c.name,c.phone,c.memberNo,c.grade||'B',c.category,c.cycle,c.lastContact,nextDate(c)||'',c.feature,c.product,c.memo,c.tar?'Y':'',c.introSent||'']
     .map(v=>'"'+String(v==null?'':v).replace(/"/g,'""')+'"').join(','));
   const blob=new Blob(['\ufeff'+head+'\n'+rows.join('\n')],{type:'text/csv'});
   const a=document.createElement('a');a.href=URL.createObjectURL(blob);
@@ -783,7 +859,7 @@ function importCSV(e){
       const o={id:base+i,name:pick(r,'성명'),phone:pick(r,'연락처'),memberNo:pick(r,'회원번호')||'-',
         grade:['A','B','C'].includes(g)?g:'B',category:cat,cycle:parseInt(pick(r,'주기'),10)||30,
         lastContact:pick(r,'마지막연락','마지막연락일'),feature:pick(r,'특징'),product:pick(r,'제품'),
-        memo:pick(r,'내부메모','메모'),touchDate:''};
+        memo:pick(r,'내부메모','메모'),touchDate:'',introSent:pick(r,'첫인사')};
       if(/^(y|yes|o|1|true|예)$/i.test(pick(r,'타라인'))||cat==='타라인')o.tar=true;
       return o;
     }).filter(o=>o.name);
